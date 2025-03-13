@@ -1,0 +1,13 @@
+[
+  {
+    "number": 4,
+    "description": "Przegląd",
+    "dueDate": "2020-01-04",
+    "weekOfYear": 1,
+    "status": "zaplanowano",
+    "recommendations": "Some recommendations",
+    "clientPhone": "",
+    "createdAt": "2025-03-13",
+    "type": "przeglad"
+  }
+]

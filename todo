@@ -1,0 +1,15 @@
+What needs to be added:
+- logging
+- translation
+- duplication verification
+    - tracker must keep the events
+    - need to adjust tracking
+- add transformation abstraction
+- add locator so we can choose proper writer based on the provided command option
+- write tests
+    - unit tests?
+    - integration tests?
+    - https://symfony.com/doc/current/testing.html
+- perhaps the basic model should be called `Message` and should be initialized via serializer? [done]
+- enhancing tracking for unprocessed records
+    - we should keep the message number + explanation why it was found faulty

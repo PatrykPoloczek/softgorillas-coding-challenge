@@ -1,0 +1,13 @@
+[
+  {
+    "number": 1,
+    "description": "Awaria",
+    "priority": "normal",
+    "dueDate": "2020-01-04",
+    "status": "termin",
+    "comments": "Some comments",
+    "clientNumber": "",
+    "createdAt": "{{created_at}}",
+    "type": "zgloszenia awarii"
+  }
+]
