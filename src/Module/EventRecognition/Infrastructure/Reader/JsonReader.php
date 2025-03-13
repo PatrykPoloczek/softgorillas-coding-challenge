@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Module\EventRecognition\Infrastructure\Reader;
 
+use App\Module\EventRecognition\Application\Enum\InputTypeEnum;
 use App\Module\EventRecognition\Application\Exception\FileNotReadableException;
 use App\Module\EventRecognition\Application\Exception\InputFileNotFoundException;
 use App\Module\EventRecognition\Application\Exception\FileReadingFailedException;
 use App\Module\EventRecognition\Application\Exception\MalformedJsonPayloadException;
 use App\Module\EventRecognition\Application\Reader\ReaderInterface;
+use App\Module\EventRecognition\Infrastructure\Model\InputFile;
 
 use function is_file;
 use function file_exists;
@@ -20,8 +22,10 @@ final class JsonReader implements ReaderInterface
 {
     private ?string $source = null;
 
-    private function init(string $filepath): void
+    private function init(InputFile $inputFile): void
     {
+        $filepath = $inputFile->getFilepath();
+
         if (!is_file($filepath) || !file_exists($filepath)) {
             throw InputFileNotFoundException::create($filepath);
         }
@@ -33,11 +37,10 @@ final class JsonReader implements ReaderInterface
         $this->source = $filepath;
     }
 
-    public function read(string $filepath): iterable
+    public function read(InputFile $inputFile): iterable
     {
         try {
-            $this->init($filepath);
-
+            $this->init($inputFile);
             $content = file_get_contents($this->source);
     
             if (!json_validate($content)) {
@@ -50,7 +53,12 @@ final class JsonReader implements ReaderInterface
                 JSON_THROW_ON_ERROR
             );
         } catch (\Throwable $exception) {
-            throw FileReadingFailedException::fromPrevious($filepath, $exception);
+            throw FileReadingFailedException::fromPrevious($inputFile->getFilepath(), $exception);
         }
+    }
+
+    public static function getSupportedType(): string
+    {
+        return InputTypeEnum::JSON->value;
     }
 }

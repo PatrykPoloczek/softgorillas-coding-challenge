@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Units\Module\EventRecognition\Infrastructure\Handler;
 
 use App\Module\EventRecognition\Application\Enum\OutputTypeEnum;
+use App\Module\EventRecognition\Application\Factory\InputFileFactoryInterface;
 use App\Module\EventRecognition\Application\Model\MessageModel;
 use App\Module\EventRecognition\Application\Model\ProcessSummary;
 use App\Module\EventRecognition\Application\Model\UnprocessableEvent;
+use App\Module\EventRecognition\Application\Provider\ReaderProviderInterface;
 use App\Module\EventRecognition\Application\Provider\WriterProviderInterface;
 use App\Module\EventRecognition\Application\Reader\ReaderInterface;
 use App\Module\EventRecognition\Application\Resolver\EventResolverInterface;
@@ -15,32 +17,36 @@ use App\Module\EventRecognition\Application\Tracker\ProcessTrackerInterface;
 use App\Module\EventRecognition\Application\Writer\WriterInterface;
 use App\Module\EventRecognition\Infrastructure\Factory\MessageModelFactory;
 use App\Module\EventRecognition\Infrastructure\Handler\RecogniseEventsHandler;
+use App\Module\EventRecognition\Infrastructure\Model\InputFile;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 final class RecogniseEventsHandlerTest extends TestCase
 {
     private RecogniseEventsHandler $service;
-    private ReaderInterface $reader;
+    private ReaderProviderInterface $readerProvider;
     private EventResolverInterface $eventResolver;
     private WriterProviderInterface $writerProvider;
     private ProcessTrackerInterface $tracker;
     private LoggerInterface $logger;
+    private InputFileFactoryInterface $inputFileFactory;
 
     public function setUp(): void
     {
         parent::setUp();
 
         $messageModelFactory = new MessageModelFactory();
-        $this->reader = $this->createMock(ReaderInterface::class);
+        $this->readerProvider = $this->createMock(ReaderProviderInterface::class);
         $this->eventResolver = $this->createMock(EventResolverInterface::class);
         $this->writerProvider = $this->createMock(WriterProviderInterface::class);
         $this->tracker = $this->createMock(ProcessTrackerInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->inputFileFactory = $this->createMock(InputFileFactoryInterface::class);
 
         $this->service = new RecogniseEventsHandler(
             $messageModelFactory,
-            $this->reader,
+            $this->inputFileFactory,
+            $this->readerProvider,
             $this->eventResolver,
             $this->writerProvider,
             $this->tracker,
@@ -69,6 +75,26 @@ final class RecogniseEventsHandlerTest extends TestCase
             $dueDate,
             $phone
         );
+        $inputFile = new InputFile(
+            'input.json',
+            '/some-path/input.json',
+            'application/json'
+        );
+        $reader = $this->createMock(ReaderInterface::class);
+
+        $this->inputFileFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with($input)
+            ->willReturn($inputFile)
+        ;
+
+        $this->readerProvider
+            ->expects($this->once())
+            ->method('provide')
+            ->with()
+            ->willReturn($reader)
+        ;
 
         $event = new UnprocessableEvent($number, '');
         $writer = $this->createMock(WriterInterface::class);
@@ -79,10 +105,10 @@ final class RecogniseEventsHandlerTest extends TestCase
             ->willReturn($writer)
         ;
 
-        $this->reader
+        $reader
             ->expects($this->once())
             ->method('read')
-            ->with($input)
+            ->with($inputFile)
             ->willReturn([$entry])
         ;
 

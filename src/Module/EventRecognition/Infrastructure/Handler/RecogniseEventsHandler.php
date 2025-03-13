@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Module\EventRecognition\Infrastructure\Handler;
 
+use App\Module\EventRecognition\Application\Enum\InputTypeEnum;
 use App\Module\EventRecognition\Application\Enum\OutputTypeEnum;
+use App\Module\EventRecognition\Application\Factory\InputFileFactoryInterface;
+use App\Module\EventRecognition\Application\Provider\ReaderProviderInterface;
 use App\Module\EventRecognition\Application\Provider\WriterProviderInterface;
-use App\Module\EventRecognition\Application\Reader\ReaderInterface;
 use App\Module\EventRecognition\Application\Resolver\EventResolverInterface;
 use App\Module\EventRecognition\Application\Handler\RecogniseEventsHandlerInterface;
 use App\Module\EventRecognition\Application\Tracker\ProcessTrackerInterface;
@@ -22,7 +24,8 @@ final readonly class RecogniseEventsHandler implements RecogniseEventsHandlerInt
 
     public function __construct(
         private MessageModelFactory $messageModelFactory,
-        private ReaderInterface $reader,
+        private InputFileFactoryInterface $inputFileFactory,
+        private ReaderProviderInterface $readerProvider,
         private EventResolverInterface $eventResolver,
         private WriterProviderInterface $writerProvider,
         private ProcessTrackerInterface $tracker,
@@ -34,10 +37,13 @@ final readonly class RecogniseEventsHandler implements RecogniseEventsHandlerInt
         string $input,
         ?string $outputType = null
     ): ProcessSummary {
+        $inputFile = $this->inputFileFactory->create($input);
+        $inputType = InputTypeEnum::resolveFromFile($inputFile);
         $outputType = OutputTypeEnum::resolveFromValue($outputType);
         $writer = $this->writerProvider->provide($outputType);
+        $reader = $this->readerProvider->provide($inputType);
 
-        foreach ($this->reader->read($input) as $index => $entry) {
+        foreach ($reader->read($inputFile) as $index => $entry) {
             $this->notify($index);
             $message = $this->messageModelFactory->create($entry);
             $event = $this->eventResolver->resolve($message, $entry);
